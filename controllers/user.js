@@ -2,33 +2,6 @@ const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
-// exports.signUp = (req, res, next) => {
-//     console.log(req.body)
-//     bcrypt.hash(req.body.password, 10)
-//         .then((hash) => {
-//             const user = new User({
-//                 email: req.body.email,
-//                 password: hash
-//             });
-//             user.save()
-//                 .then(() => {
-//                     res.status(201).json({ message: 'User added successfully!' });
-//                 })
-//                 .catch((error) => {
-//                     if (error.message.split(':')[0] == "User validation failed") {
-//                         // error code and error msg
-//                         res.status(409).json({ message: 'Email already registered' });
-//                     }
-//                     else {
-//                         res.status(500).json({ error: error });
-//                     }
-//             });
-//         })
-//         .catch((error) => { 
-//             res.status(500).json({ error: error });
-//         });
-// };
-
 exports.signUp = (req, res, next) => {
     console.log('sign up working')
     console.log(req.body)

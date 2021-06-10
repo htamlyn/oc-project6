@@ -49,22 +49,22 @@ app.get('/api/sauces/:id', async (req, res) => {
 
 app.post('/api/sauces', async (req, res) => {
     const newSauce = new Sauce(req.body);
-    await newSauce.save()
-    //     () => {
-    //         res.status(201)
-    //     }
-    // ).catch(
-    //     (error) => {
-    //         res.status(400).json({
-    //             error: error
-    //         });
-    //     }
-    // );
+    await newSauce.save().then(
+        () => {
+            res.status(201)
+        }
+    ).catch(
+        (error) => {
+            res.status(400).json({
+                error: error
+            });
+        }
+    );
 });
 
 
-app.use((req, res) => {
-    res.json({ message: 'Your request was successful!' });
-});
+// app.use((req, res) => {
+//     res.json({ message: 'Your request was successful!' });
+// });
 
 module.exports = app;
