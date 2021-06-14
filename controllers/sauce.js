@@ -1,4 +1,5 @@
-const Sauce = require ('../models/sauce');
+const Sauce = require('../models/sauce');
+const fs = require('fs');
 
 exports.getAllSauces = async (req, res) => {
     await Sauce.find({}).then(
@@ -12,7 +13,6 @@ exports.getAllSauces = async (req, res) => {
             });
         }
     );
-    console.log('it worked');
 };
 
 exports.getOneSauce = async (req, res) => {
@@ -28,25 +28,24 @@ exports.getOneSauce = async (req, res) => {
             });
         }
     );
-    console.log("can't find that sauce");
 };
 
 exports.createSauce = async (req, res) => {
+    const url = req.protocol + '://' + req.get('host');
     console.log('hitting route')
-    console.log(req.body)
+    sauce = JSON.parse(req.body.sauce)
     const newSauce = new Sauce({
-        // userId: req.body.userId,
-        name: req.body.name,
-        manufacturer: req.body.manufacturer,
-        description: req.body.description,
-        mainPepper: req.body.mainPepper,
-        heat: req.body.heat,
+        name: sauce.name,
+        manufacturer: sauce.manufacturer,
+        description: sauce.description,
+        mainPepper: sauce.mainPepper,
+        imageUrl: url + '/images/' + req.file.filename,
+        heat: sauce.heat,
         likes: 0,
         dislikes: 0,
         usersLiked: [],
         usersDisliked: []
     });
-    console.log(newSauce)
     await newSauce.save().then(
         () => {
             res.status(201).json({
@@ -60,4 +59,192 @@ exports.createSauce = async (req, res) => {
             });
         }
     );
+};
+
+// exports.modifySauce = async (req, res) => {
+//     const { id } = req.params;
+//     console.log(id);
+//     let sauce = new Sauce(id);
+//     if (req.file) {
+//         console.log(req.file)
+//     } else {
+//         sauce = {
+//             name: req.body.name,
+//             manufacturer: req.body.manufacturer,
+//             description: req.body.description,
+//             mainPepper: req.body.mainPepper,
+//             // imageUrl: url + '/images/' + req.file.filename,
+//             heat: req.body.heat,
+//             likes: 0,
+//             dislikes: 0,
+//             usersLiked: [],
+//             usersDisliked: []
+//         }
+//     }
+//     console.log(sauce)
+//     await Sauce.findByIdAndUpdate(id, sauce).then(
+//         () => {
+//             res.status(201).json({
+//                 message: 'Thing updated successfully!'
+//             });
+//         }
+//     ).catch(
+//         (error) => {
+//             res.status(400).json({
+//                 error: error
+//             });
+//         }
+//     );
+// };
+
+exports.modifySauce = async (req, res) => {
+    const { id } = req.params;
+    const sauce = new Sauce({
+        _id: id,
+        name: req.body.name,
+        manufacturer: req.body.manufacturer,
+        description: req.body.description,
+        mainPepper: req.body.mainPepper,
+        // imageUrl: url + '/images/' + req.file.filename,
+        heat: req.body.heat,
+        likes: 0,
+        dislikes: 0,
+        usersLiked: [],
+        usersDisliked: []
+    });
+    await Sauce.findByIdAndUpdate(id, sauce).then(
+        () => {
+            res.status(201).json({
+                message: 'Thing updated successfully!'
+            });
+        }
+    ).catch(
+        (error) => {
+            res.status(400).json({
+                error: error
+            });
+        }
+    );
+};
+
+exports.likeSauce = async (req, res) => {
+    const { id } = req.params;
+    const sauce = await Sauce.findById(id).then(
+        (sauce) => {
+            if (req.body.like === 1) {
+                let liked = sauce.usersLiked.includes(req.body.userId)
+                if (liked === true) {
+                    console.log('Already liked')
+                } else {
+                    sauce.usersLiked.push(req.body.userId)
+                    sauce.likes = sauce.likes + 1
+                    Sauce.findByIdAndUpdate(id, sauce).then(
+                        () => {
+                            res.status(201).json({
+                                message: 'Liked!'
+                            });
+                        }
+                    ).catch(
+                        (error) => {
+                            res.status(400).json({
+                                error: error
+                            });
+                        }
+                    );
+                }
+            } else if (req.body.like === 0) {
+                const likeIndex = sauce.usersLiked.indexOf(req.body.userId)
+                if (likeIndex !== -1 && sauce.likes > 0) {
+                    sauce.usersLiked.splice(likeIndex, 1)
+                    sauce.likes = sauce.likes - 1
+                }
+                const dislikeIndex = sauce.usersDisliked.indexOf(req.body.userId)
+                if (dislikeIndex !== -1 && sauce.dislikes > 0) {
+                    sauce.usersDisliked.splice(dislikeIndex, 1)
+                    sauce.dislikes = sauce.dislikes - 1
+                }
+                Sauce.findByIdAndUpdate(id, sauce).then(
+                    () => {
+                        res.status(201).json({
+                            message: 'Cancelled opinion'
+                        });
+                    }
+                ).catch(
+                    (error) => {
+                        res.status(400).json({
+                            error: error
+                        });
+                    }
+                );
+            } else {
+                let disliked = sauce.usersDisliked.includes(req.body.userId)
+                if (disliked === true) {
+                    console.log('Already disliked')
+                } else {
+                    sauce.usersDisliked.push(req.body.userId)
+                    sauce.dislikes = sauce.dislikes + 1
+                    Sauce.findByIdAndUpdate(id, sauce).then(
+                        () => {
+                            res.status(201).json({
+                                message: 'Disliked!'
+                            });
+                        }
+                    ).catch(
+                        (error) => {
+                            res.status(400).json({
+                                error: error
+                            });
+                        }
+                    );
+                }
+            }
+        }).catch(
+            (error) => {
+                res.status(400).json({
+                    error: error
+                });
+            }
+        )
+}
+
+// exports.deleteOneSauce = async (req, res) => {
+//     const { id } = req.params;
+//     await Sauce.findById(id).then(
+//         (thing) => {
+//             const filename = thing.imageUrl.split('/images/')[1];
+//             fs.unlink('images/' + filename, () => {
+//                 Sauce.deleteOne(id).then(
+//                     () => {
+//                         res.status(200).json({
+//                             message: 'Deleted'
+//                         });
+//                     }
+//                 ).catch(
+//                     (error) => {
+//                         res.status(400).json({
+//                             error: error
+//                         });
+//                     }
+//                 );
+//             });
+//         }
+//     );
+// };
+
+
+exports.deleteOneSauce = async (req, res) => {
+    const { id } = req.params;
+    await Sauce.findByIdAndDelete(id).then(
+        () => {
+            res.status(200).json({
+                message: 'Deleted'
+            });
+        }
+    ).catch(
+        (error) => {
+            res.status(400).json({
+                error: error
+            });
+        }
+    )
 };
