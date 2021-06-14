@@ -7,7 +7,7 @@ const userRoutes = require('./routes/user');
 
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/sauceApp', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect('mongodb+srv://helen:FEYPGza5C3df59u@cluster0.7rjsp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true})
     .then(() => {
         console.log('Successfully connected to MongoDb')
     })

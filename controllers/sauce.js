@@ -35,6 +35,7 @@ exports.createSauce = async (req, res) => {
     console.log('hitting route')
     sauce = JSON.parse(req.body.sauce)
     const newSauce = new Sauce({
+        userId: sauce.userId,
         name: sauce.name,
         manufacturer: sauce.manufacturer,
         description: sauce.description,
@@ -61,61 +62,37 @@ exports.createSauce = async (req, res) => {
     );
 };
 
-// exports.modifySauce = async (req, res) => {
-//     const { id } = req.params;
-//     console.log(id);
-//     let sauce = new Sauce(id);
-//     if (req.file) {
-//         console.log(req.file)
-//     } else {
-//         sauce = {
-//             name: req.body.name,
-//             manufacturer: req.body.manufacturer,
-//             description: req.body.description,
-//             mainPepper: req.body.mainPepper,
-//             // imageUrl: url + '/images/' + req.file.filename,
-//             heat: req.body.heat,
-//             likes: 0,
-//             dislikes: 0,
-//             usersLiked: [],
-//             usersDisliked: []
-//         }
-//     }
-//     console.log(sauce)
-//     await Sauce.findByIdAndUpdate(id, sauce).then(
-//         () => {
-//             res.status(201).json({
-//                 message: 'Thing updated successfully!'
-//             });
-//         }
-//     ).catch(
-//         (error) => {
-//             res.status(400).json({
-//                 error: error
-//             });
-//         }
-//     );
-// };
-
 exports.modifySauce = async (req, res) => {
     const { id } = req.params;
-    const sauce = new Sauce({
-        _id: id,
-        name: req.body.name,
-        manufacturer: req.body.manufacturer,
-        description: req.body.description,
-        mainPepper: req.body.mainPepper,
-        // imageUrl: url + '/images/' + req.file.filename,
-        heat: req.body.heat,
-        likes: 0,
-        dislikes: 0,
-        usersLiked: [],
-        usersDisliked: []
-    });
+    const url = req.protocol + '://' + req.get('host');
+    if (req.file) {
+        await Sauce.findById(id).then(
+            (sauce) => {
+                const filename = sauce.imageUrl.split('/images/')[1];
+                fs.unlink('images/' + filename, () => {
+                    console.log('file deleted')
+                })
+            }
+        )
+        sauce = JSON.parse(req.body.sauce)
+        sauce = {
+            userId: sauce.userId,
+            name: sauce.name,
+            manufacturer: sauce.manufacturer,
+            description: sauce.description,
+            mainPepper: sauce.mainPepper,
+            imageUrl: url + '/images/' + req.file.filename,
+            heat: sauce.heat,
+        }
+        console.log(sauce)
+    } else {
+        console.log('no file')
+        sauce = req.body;
+    }
     await Sauce.findByIdAndUpdate(id, sauce).then(
         () => {
             res.status(201).json({
-                message: 'Thing updated successfully!'
+                message: 'Sauce updated successfully!'
             });
         }
     ).catch(
@@ -207,44 +184,26 @@ exports.likeSauce = async (req, res) => {
         )
 }
 
-// exports.deleteOneSauce = async (req, res) => {
-//     const { id } = req.params;
-//     await Sauce.findById(id).then(
-//         (thing) => {
-//             const filename = thing.imageUrl.split('/images/')[1];
-//             fs.unlink('images/' + filename, () => {
-//                 Sauce.deleteOne(id).then(
-//                     () => {
-//                         res.status(200).json({
-//                             message: 'Deleted'
-//                         });
-//                     }
-//                 ).catch(
-//                     (error) => {
-//                         res.status(400).json({
-//                             error: error
-//                         });
-//                     }
-//                 );
-//             });
-//         }
-//     );
-// };
-
-
 exports.deleteOneSauce = async (req, res) => {
     const { id } = req.params;
-    await Sauce.findByIdAndDelete(id).then(
-        () => {
-            res.status(200).json({
-                message: 'Deleted'
+    await Sauce.findById(id).then(
+        (sauce) => {
+            const filename = sauce.imageUrl.split('/images/')[1];
+            fs.unlink('images/' + filename, () => {
+                Sauce.findByIdAndDelete(id).then(
+                    () => {
+                        res.status(200).json({
+                            message: 'Deleted'
+                        });
+                    }
+                ).catch(
+                    (error) => {
+                        res.status(400).json({
+                            error: error
+                        });
+                    }
+                );
             });
         }
-    ).catch(
-        (error) => {
-            res.status(400).json({
-                error: error
-            });
-        }
-    )
+    );
 };
